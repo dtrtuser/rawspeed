@@ -151,7 +151,7 @@ void DngDecoder::dropUnsuportedChunks(std::vector<const TiffIFD*>* data) {
       writeLog(DEBUG_PRIO::WARNING, "DNG Decoder: found Deflate-encoded chunk, "
                                     "but the deflate support was disabled at "
                                     "build!");
-      [[clang::fallthrough]];
+      [[fallthrough]];
 #endif
 #ifndef HAVE_JPEG
     case 0x884c: // lossy JPEG
@@ -160,7 +160,7 @@ void DngDecoder::dropUnsuportedChunks(std::vector<const TiffIFD*>* data) {
       writeLog(DEBUG_PRIO::WARNING, "DNG Decoder: found lossy JPEG-encoded "
                                     "chunk, but the jpeg support was "
                                     "disabled at build!");
-      [[clang::fallthrough]];
+      [[fallthrough]];
 #endif
 #ifndef HAVE_JPEGXL
     case 52546: // JPEG XL (DNG 1.7)
@@ -169,7 +169,7 @@ void DngDecoder::dropUnsuportedChunks(std::vector<const TiffIFD*>* data) {
       writeLog(DEBUG_PRIO::WARNING, "DNG Decoder: found JPEG XL-encoded "
                                     "chunk, but JPEG XL support was "
                                     "disabled at build!");
-      [[clang::fallthrough]];
+      [[fallthrough]];
 #endif
     default:
       supported = false;
@@ -242,10 +242,24 @@ Optional<CFAColor> getDNGCFAPatternAsCFAColor(uint32_t c) {
 
 void DngDecoder::parseCFA(const TiffIFD* raw) const {
 
-  // Check if layout is OK, if present
-  if (raw->hasEntry(TiffTag::CFALAYOUT) &&
-      raw->getEntry(TiffTag::CFALAYOUT)->getU16() != 1)
-    ThrowRDE("Unsupported CFA Layout.");
+  // Check if layout is OK, if present. CFALayout 2/3 are the DNG 1.2/1.3-era
+  // "simple staggered" layouts used by Fuji Super CCD conversions (even
+  // columns offset down/up by half a row); these are handled after normal
+  // crop handling by applyFujiRotation(), not rejected here.
+  if (raw->hasEntry(TiffTag::CFALAYOUT)) {
+    const auto layout = raw->getEntry(TiffTag::CFALAYOUT)->getU16();
+    if (layout == 2 || layout == 3) {
+      fujiRotate = true;
+      // Confirmed empirically: alt_layout=true is correct for CFALayout==2
+      // on DSCF1010.dng. Flipping this to false (tested) produced a
+      // horizontally stretched image — wrong aspect ratio — so this mapping
+      // is geometry-correct; the color cast/diagonal artifacts seen with it
+      // are a separate, CFA-pattern-related issue (see applyFujiRotation()).
+      fujiAltLayout = (layout == 2);
+    } else if (layout != 1) {
+      ThrowRDE("Unsupported CFA Layout.");
+    }
+  }
 
   const TiffEntry* cfadim = raw->getEntry(TiffTag::CFAREPEATPATTERNDIM);
   if (cfadim->count != 2)
@@ -621,6 +635,9 @@ RawImage DngDecoder::decodeRawInternal() {
 
   handleMetadata(raw);
 
+  if (fujiRotate)
+    applyFujiRotation();
+
   return mRaw;
 }
 
@@ -734,6 +751,60 @@ void DngDecoder::handleMetadata(const TiffIFD* raw) {
   }
 }
 
+void DngDecoder::applyFujiRotation() {
+  // Ported from RafDecoder::applyCorrections()'s scatter logic. Unlike RAF,
+  // where crop and rotation are resolved together against camera-specific
+  // hints, for DNG we deliberately run this AFTER handleMetadata() has
+  // already applied the normal ActiveArea/DefaultCrop handling unmodified.
+  // By this point mRaw is already exactly the valid cropped sensor region,
+  // so new_size == mRaw->dim and crop_offset == (0, 0); there is no need to
+  // duplicate DNG crop-tag parsing here.
+  const iPoint2D new_size(mRaw->dim);
+  const iPoint2D crop_offset(0, 0);
+
+  uint32_t rotatedsize;
+  uint32_t rotationPos;
+  if (fujiAltLayout) {
+    rotatedsize = new_size.y + new_size.x / 2;
+    rotationPos = new_size.x / 2 - 1;
+  } else {
+    rotatedsize = new_size.x + new_size.y / 2;
+    rotationPos = new_size.x - 1;
+  }
+
+  const iPoint2D final_size(rotatedsize, rotatedsize - 1);
+  RawImage rotated = RawImage::create(final_size, RawImageType::UINT16, 1);
+  rotated->clearArea(iRectangle2D(iPoint2D(0, 0), rotated->dim));
+  rotated->cfa = mRaw->cfa;
+  rotated->metadata = mRaw->metadata;
+  rotated->metadata.fujiRotationPos = rotationPos;
+  rotated->blackLevel = mRaw->blackLevel;
+  rotated->blackLevelSeparate = mRaw->blackLevelSeparate;
+  rotated->whitePoint = mRaw->whitePoint;
+
+  auto srcImg = mRaw->getU16DataAsUncroppedArray2DRef();
+  auto dstImg = rotated->getU16DataAsUncroppedArray2DRef();
+
+  for (int y = 0; y < new_size.y; y++) {
+    for (int x = 0; x < new_size.x; x++) {
+      int h;
+      int w;
+      if (fujiAltLayout) { // Swapped x and y
+        h = rotatedsize - (new_size.y + 1 - y + (x >> 1));
+        w = ((x + 1) >> 1) + y;
+      } else {
+        h = new_size.x - 1 - x + (y >> 1);
+        w = ((y + 1) >> 1) + x;
+      }
+      if (h < rotated->dim.y && w < rotated->dim.x)
+        dstImg(h, w) = srcImg(crop_offset.y + y, crop_offset.x + x);
+      else
+        ThrowRDE("Trying to write out of bounds");
+    }
+  }
+  mRaw = rotated;
+}
+
 void DngDecoder::parseWhiteBalance() const {
   // Fetch the white balance
   if (mRootIFD->hasEntryRecursive(TiffTag::ASSHOTNEUTRAL)) {
@@ -829,6 +900,21 @@ void DngDecoder::decodeMetaDataInternal(const CameraMetaData* meta) {
     } else {
       mRaw->metadata.canonical_id = id.make + " " + id.model;
     }
+  }
+
+  if (fujiRotate) {
+    // The DNG's own CFAPattern (parsed in parseCFA()) describes the
+    // pre-rotation staggered sensor layout (e.g. a 4x2 repeat for this
+    // family), which does not apply to the buffer post-applyFujiRotation().
+    // RafDecoder faces the same situation and resolves it by using the
+    // camera database's curated CFA (cam->cfa), not the raw sensor's tagged
+    // pattern; do the same here, now that `cam` is resolved.
+    if (!cam) {
+      ThrowRDE("Fuji Super CCD staggered-CFA DNG: no camera database match "
+               "for '%s' '%s', cannot resolve the post-rotation CFA pattern",
+               id.make.c_str(), id.model.c_str());
+    }
+    mRaw->cfa = cam->cfa;
   }
 
   parseColorMatrix();

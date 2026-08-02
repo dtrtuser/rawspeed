@@ -55,12 +55,19 @@ private:
   void decodeData(const TiffIFD* raw, uint32_t sample_format) const;
   void deinterleaveFields(const TiffIFD* raw) const;
   void handleMetadata(const TiffIFD* raw);
+  void applyFujiRotation();
   bool decodeMaskedAreas(const TiffIFD* raw) const;
   bool decodeBlackLevels(const TiffIFD* raw) const;
   void setBlack(const TiffIFD* raw) const;
 
   Optional<int> bps;
   int compression = -1;
+
+  // Fuji Super CCD staggered-CFA support (DNG CFALayout 2/3).
+  // Set by parseCFA(), consumed by applyFujiRotation() after normal
+  // ActiveArea/DefaultCrop handling has run.
+  mutable bool fujiRotate = false;
+  mutable bool fujiAltLayout = false;
 };
 
 } // namespace rawspeed
