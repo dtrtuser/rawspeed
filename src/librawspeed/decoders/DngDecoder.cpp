@@ -668,18 +668,29 @@ void DngDecoder::handleMetadata(const TiffIFD* raw) {
     cropped.dim = mRaw->dim - cropped.pos;
 
     const auto sz_r = size_entry->getRationalArray(2);
-    std::array<unsigned, 2> sz;
-    std::transform(sz_r.begin(), sz_r.end(), sz.begin(),
-                   [](const NotARational<unsigned>& r) {
-                     if (r.den == 0 || r.num % r.den != 0)
-                       ThrowRDE("Error decoding default crop size");
-                     return r.num / r.den;
-                   });
+    // Some writers leave DefaultCropSize as an undefined rational (0/0) --
+    // seen on an iPhone 13 Pro Portrait-mode ProRAW DNG (DNG 1.7). Per the
+    // DNG spec, DefaultCropSize simply defaults to the full image size when
+    // it can't be used, so treat 0/0 the same as "don't apply a crop size"
+    // rather than a hard decode error; only a genuinely malformed non-zero
+    // denominator (non-integer result) is still an error.
+    const bool sizeUndefined =
+        std::any_of(sz_r.begin(), sz_r.end(),
+                    [](const NotARational<unsigned>& r) { return r.den == 0; });
+    if (!sizeUndefined) {
+      std::array<unsigned, 2> sz;
+      std::transform(sz_r.begin(), sz_r.end(), sz.begin(),
+                     [](const NotARational<unsigned>& r) {
+                       if (r.num % r.den != 0)
+                         ThrowRDE("Error decoding default crop size");
+                       return r.num / r.den;
+                     });
 
-    if (iPoint2D size(sz[0], sz[1]);
-        size.isThisInside(mRaw->dim) &&
-        (size + cropped.pos).isThisInside(mRaw->dim))
-      cropped.dim = size;
+      if (iPoint2D size(sz[0], sz[1]);
+          size.isThisInside(mRaw->dim) &&
+          (size + cropped.pos).isThisInside(mRaw->dim))
+        cropped.dim = size;
+    }
 
     mRaw->subFrame(cropped);
   }
