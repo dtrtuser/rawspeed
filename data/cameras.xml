@@ -310,6 +310,7 @@
 		<Aliases>
 			<Alias id="EOS Digital Rebel XT">Canon EOS DIGITAL REBEL XT</Alias>
 			<Alias id="EOS Kiss Digital N">Canon EOS Kiss Digital N</Alias>
+			<Alias id="EOS 350D">Canon EOS 350D</Alias>
 			<Alias id="EOS 350D">Canon EOS 350D Digital</Alias>
 		</Aliases>
 		<ColorMatrices>
@@ -6655,7 +6656,7 @@
 	<Camera make="OLYMPUS IMAGING CORP." model="SP310" supported="unknown-no-samples">
 		<ID make="Olympus" model="SP310">Olympus SP310</ID>
 	</Camera>
-	<Camera make="OLYMPUS IMAGING CORP." model="SP320" supported="no-samples">
+	<Camera make="OLYMPUS IMAGING CORP." model="SP320">
 		<ID make="Olympus" model="SP320">Olympus SP320</ID>
 		<Crop x="0" y="0" width="0" height="0"/>
 		<Sensor black="0" white="4095"/>
@@ -11241,6 +11242,7 @@
 			<Alias>DC-FZ80D</Alias>
 			<Alias>DC-FZ82D</Alias>
 			<Alias>DC-FZ85D</Alias>
+			<Alias>DC-FZ45</Alias>
 		</Aliases>
 		<ColorMatrices>
 			<ColorMatrix planes="3">
@@ -11261,6 +11263,7 @@
 			<Alias>DC-FZ80D</Alias>
 			<Alias>DC-FZ82D</Alias>
 			<Alias>DC-FZ85D</Alias>
+			<Alias>DC-FZ45</Alias>
 		</Aliases>
 		<ColorMatrices>
 			<ColorMatrix planes="3">
@@ -13650,7 +13653,7 @@
 			<Color x="0" y="1">GREEN</Color>
 			<Color x="1" y="1">BLUE</Color>
 		</CFA>
-		<Crop x="0" y="0" width="-26" height="0"/>
+		<Crop x="0" y="0" width="-24" height="0"/>
 		<Sensor black="512" white="16300"/>
 		<ColorMatrices>
 			<ColorMatrix planes="3">
@@ -17151,9 +17154,9 @@
 		<Sensor black="0" white="3965"/>
 		<ColorMatrices>
 			<ColorMatrix planes="3">
-				<ColorMatrixRow plane="0">8983 -2942 -963</ColorMatrixRow>
-				<ColorMatrixRow plane="1">-6556 14476 2237</ColorMatrixRow>
-				<ColorMatrixRow plane="2">-2426 2887 8014</ColorMatrixRow>
+				<ColorMatrixRow plane="0">9117 -3063 -973</ColorMatrixRow>
+				<ColorMatrixRow plane="1">-7949 15763 2306</ColorMatrixRow>
+				<ColorMatrixRow plane="2">-2752 3136 8093</ColorMatrixRow>
 			</ColorMatrix>
 		</ColorMatrices>
 	</Camera>
@@ -17169,9 +17172,9 @@
 		<Sensor black="0" white="3965"/>
 		<ColorMatrices>
 			<ColorMatrix planes="3">
-				<ColorMatrixRow plane="0">9144 -2777 -998</ColorMatrixRow>
-				<ColorMatrixRow plane="1">-6676 14556 2281</ColorMatrixRow>
-				<ColorMatrixRow plane="2">-2470 3019 7744</ColorMatrixRow>
+				<ColorMatrixRow plane="0">9258 -2879 -1008</ColorMatrixRow>
+				<ColorMatrixRow plane="1">-8076 15847 2351</ColorMatrixRow>
+				<ColorMatrixRow plane="2">-2806 3280 7821</ColorMatrixRow>
 			</ColorMatrix>
 		</ColorMatrices>
 	</Camera>
@@ -17187,9 +17190,9 @@
 		<Sensor black="0" white="3965"/>
 		<ColorMatrices>
 			<ColorMatrix planes="3">
-				<ColorMatrixRow plane="0">10880 -3638 -1186</ColorMatrixRow>
-				<ColorMatrixRow plane="1">-6496 14313 2364</ColorMatrixRow>
-				<ColorMatrixRow plane="2">-2456 3092 7485</ColorMatrixRow>
+				<ColorMatrixRow plane="0">11050 -3791 -1199</ColorMatrixRow>
+				<ColorMatrixRow plane="1">-7875 15585 2434</ColorMatrixRow>
+				<ColorMatrixRow plane="2">-2797 3359 7560</ColorMatrixRow>
 			</ColorMatrix>
 		</ColorMatrices>
 	</Camera>
@@ -17205,9 +17208,9 @@
 		<Sensor black="0" white="3965"/>
 		<ColorMatrices>
 			<ColorMatrix planes="3">
-				<ColorMatrixRow plane="0">11368 -3894 -1242</ColorMatrixRow>
-				<ColorMatrixRow plane="1">-6521 14358 2339</ColorMatrixRow>
-				<ColorMatrixRow plane="2">-2475 3056 7285</ColorMatrixRow>
+				<ColorMatrixRow plane="0">11555 -4064 -1256</ColorMatrixRow>
+				<ColorMatrixRow plane="1">-7903 15633 2409</ColorMatrixRow>
+				<ColorMatrixRow plane="2">-2811 3320 7358</ColorMatrixRow>
 			</ColorMatrix>
 		</ColorMatrices>
 	</Camera>
@@ -18070,6 +18073,27 @@
 			</ColorMatrix>
 		</ColorMatrices>
 	</Camera>
+	<Camera make="HASSELBLAD" model="Lunar">
+		<ID make="Hasselblad" model="Lunar">Hasselblad Lunar</ID>
+		<CFA width="2" height="2">
+			<Color x="0" y="0">RED</Color>
+			<Color x="1" y="0">GREEN</Color>
+			<Color x="0" y="1">GREEN</Color>
+			<Color x="1" y="1">BLUE</Color>
+		</CFA>
+		<Crop x="0" y="0" width="-24" height="0"/>
+		<Sensor black="512" white="16300"/>
+		<ColorMatrices>
+			<ColorMatrix planes="3">
+				<ColorMatrixRow plane="0">5491 -1192 -363</ColorMatrixRow>
+				<ColorMatrixRow plane="1">-4951 12342 2948</ColorMatrixRow>
+				<ColorMatrixRow plane="2">-911 1722 7192</ColorMatrixRow>
+			</ColorMatrix>
+		</ColorMatrices>
+	</Camera>
+	<Camera make="HASSELBLAD" model="Stellar" supported="unknown-no-samples">
+		<ID make="Hasselblad" model="Stellar">Hasselblad Stellar</ID>
+	</Camera>
 	<Camera make="Hasselblad" model="Hasselblad 500 mech.">
 		<ID make="Hasselblad" model="CFV">Hasselblad 16-Uncoated</ID>
 		<CFA width="2" height="2">
@@ -18705,6 +18729,9 @@
 	</Camera>
 	<Camera make="SIGMA" model="SIGMA fp L" mode="dng">
 		<ID make="Sigma" model="fp L">SIGMA fp L</ID>
+	</Camera>
+	<Camera make="Sigma" model="Sigma FP2" mode="dng">
+		<ID make="Sigma" model="FP2">Sigma FP2</ID>
 	</Camera>
 	<Camera make="SIGMA" model="sd Quattro" mode="dng">
 		<ID make="Sigma" model="sd Quattro">sd Quattro</ID>
